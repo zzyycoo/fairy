@@ -13,6 +13,7 @@ export interface BookingData {
   service: Service
   agent: string
   hotel?: string
+  roomType?: string  // 新增房型选择
   checkIn?: string
   checkOut?: string
   authorizer: string

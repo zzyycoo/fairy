@@ -41,6 +41,15 @@ export const HOTELS = [
   { value: 'IC', label: 'IC' }
 ]
 
+// Room types
+export const ROOM_TYPES = [
+  { value: 'Deluxe Room', label: 'Deluxe Room' },
+  { value: 'Grand Deluxe Room', label: 'Grand Deluxe Room' },
+  { value: 'Premier Suite', label: 'Premier Suite' },
+  { value: 'Executive Suite', label: 'Executive Suite' },
+  { value: 'Presidential Suite', label: 'Presidential Suite' }
+]
+
 // Service options for home page
 export const SERVICE_OPTIONS = [
   { key: 'room' as const, icon: '🛏️', label: 'Room Booking' },

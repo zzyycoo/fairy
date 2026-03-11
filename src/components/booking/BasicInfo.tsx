@@ -1,4 +1,4 @@
-import { AGENTS, AUTHORIZERS, HOTELS } from '../../constants'
+import { AGENTS, AUTHORIZERS, HOTELS, ROOM_TYPES } from '../../constants'
 import type { BookingData } from '../../types'
 
 interface BasicInfoProps {
@@ -36,6 +36,21 @@ export const BasicInfo = ({ data, showRoomFields, onUpdate }: BasicInfoProps) =>
             >
               <option value="">Select...</option>
               {HOTELS.map(h => <option key={h.value} value={h.value}>{h.label}</option>)}
+            </select>
+          </div>
+        )}
+
+        {/* Room Type (Room only) */}
+        {showRoomFields && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Room Type</label>
+            <select
+              value={data.roomType}
+              onChange={(e) => onUpdate('roomType', e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-lg"
+            >
+              <option value="">Select...</option>
+              {ROOM_TYPES.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
             </select>
           </div>
         )}

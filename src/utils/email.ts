@@ -24,7 +24,8 @@ Kindly assist us make room booking as below:
 
 Guest name: ${formatGuestList(guests)}
 
-Room type: ${hotel}
+Hotel: ${hotel}
+Room type: ${bookingData.roomType || 'Not specified'}
 Check in: ${checkIn}
 Check out: ${checkOut}
 Rate code: CASBAR
