@@ -11,8 +11,7 @@ interface SaveToSheetsData {
 }
 
 /**
- * Save booking data to Google Sheets
- * Note: Due to no-cors mode, we can't verify success, but errors will be caught
+ * Save booking data to Google Sheets via POST
  */
 export const saveToGoogleSheets = async (bookingData: BookingData): Promise<{ success: boolean; error?: string }> => {
   const data: SaveToSheetsData = {
@@ -24,14 +23,18 @@ export const saveToGoogleSheets = async (bookingData: BookingData): Promise<{ su
   }
 
   try {
-    const url = `${GOOGLE_SCRIPT_URL}?data=${encodeURIComponent(JSON.stringify(data))}`
-    // no-cors mode means we can't read the response, but the request will be sent
-    await fetch(url, { 
-      method: 'GET', 
+    // 使用 POST 方法，将数据放在 body 中
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: 'POST',
       mode: 'no-cors',
-      cache: 'no-cache'
+      cache: 'no-cache',
+      headers: {
+        'Content-Type': 'text/plain;charset=utf-8',
+      },
+      body: JSON.stringify(data)
     })
-    // Since we can't verify with no-cors, we assume success if no error thrown
+    
+    // no-cors 模式下无法读取响应，但请求会发送
     return { success: true }
   } catch (error) {
     console.error('Google Sheets save error:', error)
