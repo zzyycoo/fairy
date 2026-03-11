@@ -84,11 +84,11 @@ function App() {
   }
 
   const handleSaveToSheets = async () => {
-    const success = await saveToGoogleSheets(bookingData)
-    if (success) {
+    const result = await saveToGoogleSheets(bookingData)
+    if (result.success) {
       showSuccess(`✅ Successfully saved ${bookingData.guests.length} guest(s) to Google Sheets!`, 4000)
     } else {
-      showSuccess('❌ Save failed', 3000)
+      showSuccess(`❌ Save failed: ${result.error || 'Unknown error'}`, 3000)
     }
   }
 
