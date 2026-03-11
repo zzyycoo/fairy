@@ -1,5 +1,5 @@
 // Google Sheets integration
-export const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOpykMzPHrhi6pcthRdASWMQdjXO0VQJilRd9R67i1_GRqtBOPBcHDD8fJrHNjY1znCg/exec'
+export const GOOGLE_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzf_EBNFsHWRwe6oTvunTJTQ8Q82vl9cbQTqhEETad2SNzcd9zAMj9jZjl04KOAdUt2lA/exec'
 
 // Agent list
 export const AGENTS = [
