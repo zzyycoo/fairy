@@ -11,7 +11,8 @@ interface SaveToSheetsData {
 }
 
 /**
- * Save booking data to Google Sheets via POST
+ * Save booking data to Google Sheets via GET
+ * 匹配 Google Apps Script doGet(e) 函数
  */
 export const saveToGoogleSheets = async (bookingData: BookingData): Promise<{ success: boolean; error?: string }> => {
   const data: SaveToSheetsData = {
@@ -23,15 +24,13 @@ export const saveToGoogleSheets = async (bookingData: BookingData): Promise<{ su
   }
 
   try {
-    // 使用 POST 方法，将数据放在 body 中
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: 'POST',
+    // GET 方式：将数据作为 URL 参数传递
+    const url = `${GOOGLE_SCRIPT_URL}?data=${encodeURIComponent(JSON.stringify(data))}`
+    
+    await fetch(url, {
+      method: 'GET',
       mode: 'no-cors',
-      cache: 'no-cache',
-      headers: {
-        'Content-Type': 'text/plain;charset=utf-8',
-      },
-      body: JSON.stringify(data)
+      cache: 'no-cache'
     })
     
     // no-cors 模式下无法读取响应，但请求会发送
