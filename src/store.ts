@@ -4,6 +4,7 @@ import type {
   PIDDatabase, 
   ServiceType, 
   Guest, 
+  Sharer,
   CarService, 
   GolfGuest, 
   OneDayTripGuest 
@@ -19,6 +20,38 @@ const getTomorrowStr = () => {
   const d = new Date();
   d.setDate(d.getDate() + 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// V2.0.24: 计算表单完成进度
+const calculateProgress = (state: BookingState): number => {
+  if (!state.selectedServices.has('room') || !state.roomBooking) return 0;
+  
+  const rb = state.roomBooking;
+  let total = 0;
+  let completed = 0;
+  
+  // 必填字段
+  const requiredFields = {
+    agent: !!rb.agent,
+    hotel: !!rb.hotel,
+    checkIn: !!rb.checkIn,
+    checkOut: !!rb.checkOut,
+  };
+  
+  Object.entries(requiredFields).forEach(([_, filled]) => {
+    total++;
+    if (filled) completed++;
+  });
+  
+  // 客人信息
+  rb.guests.forEach(guest => {
+    total += 3; // name, roomType, (oldPID or newPID)
+    if (guest.name) completed++;
+    if (guest.roomType) completed++;
+    if (guest.oldPID || guest.newPID) completed++;
+  });
+  
+  return Math.round((completed / total) * 100);
 };
 
 interface StoreState {
@@ -43,9 +76,15 @@ interface StoreState {
   addGuest: () => void;
   removeGuest: (id: number) => void;
   updateGuest: (id: number, data: Partial<Guest>) => void;
-  toggleSharer: (guestId: number) => void;
-  updateSharer: (guestId: number, data: Partial<Guest['sharer']>) => void;
-  removeSharer: (guestId: number) => void;
+  
+  // V2.0.40: 多Sharer支持
+  addSharer: (guestId: number) => void;
+  removeSharer: (guestId: number, sharerId: number) => void;
+  updateSharer: (guestId: number, sharerId: number, data: Partial<Sharer>) => void;
+  
+  // V2.0.24: 验证
+  setValidationError: (field: string, error: string) => void;
+  clearValidationError: (field: string) => void;
   
   // Car Service
   addCarService: () => void;
@@ -80,8 +119,9 @@ interface StoreState {
   resetAll: () => void;
 }
 
-// Guest ID 计数器
+// ID 计数器
 let guestIdCounter = 1;
+let sharerIdCounter = 1;
 let carIdCounter = 1;
 let golfGuestIdCounter = 1;
 let oneDayTripGuestIdCounter = 1;
@@ -96,6 +136,8 @@ const initialState: BookingState = {
   oneDayTrip: null,
   generatedEmail: null,
   emailSubject: null,
+  validationErrors: {},
+  formProgress: 0,
 };
 
 export const useStore = create<StoreState>((set) => ({
@@ -151,30 +193,53 @@ export const useStore = create<StoreState>((set) => ({
   })),
   
   // Room Booking
-  initRoomBooking: () => set((state) => ({
-    booking: {
+  initRoomBooking: () => set((state) => {
+    // V2.0.36: 不设置默认酒店，让用户自己选择
+    const defaultGuest: Guest = {
+      id: guestIdCounter++,
+      oldPID: '',
+      newPID: '',
+      name: '',
+      roomType: '',
+      sharers: [], // V2.0.39: 默认空数组，但表单始终可见
+    };
+    
+    const newBooking = {
       ...state.booking,
       roomBooking: {
         agent: '',
-        hotel: '',
+        hotel: '' as const, // V2.0.36: 空字符串，不设置默认
         checkIn: getTodayStr(),
         checkOut: getTomorrowStr(),
         authorizer: 'Jian.Xu',
         rateCode: 'CASBAR',
         deposit: 'No',
-        guests: [],
+        guests: [defaultGuest],
       },
-    },
-  })),
+    };
+    
+    return { 
+      booking: {
+        ...newBooking,
+        formProgress: calculateProgress(newBooking),
+      }
+    };
+  }),
   
-  updateRoomBooking: (data) => set((state) => ({
-    booking: {
+  updateRoomBooking: (data) => set((state) => {
+    const newBooking = {
       ...state.booking,
       roomBooking: state.booking.roomBooking 
         ? { ...state.booking.roomBooking, ...data }
         : null,
-    },
-  })),
+    };
+    return {
+      booking: {
+        ...newBooking,
+        formProgress: calculateProgress(newBooking),
+      }
+    };
+  }),
   
   addGuest: () => set((state) => {
     if (!state.booking.roomBooking) return state;
@@ -184,8 +249,10 @@ export const useStore = create<StoreState>((set) => ({
       newPID: '',
       name: '',
       roomType: '',
+      sharers: [], // V2.0.39: 默认空sharers数组
     };
-    return {
+    
+    const newBooking = {
       booking: {
         ...state.booking,
         roomBooking: {
@@ -194,11 +261,19 @@ export const useStore = create<StoreState>((set) => ({
         },
       },
     };
+    
+    return {
+      booking: {
+        ...newBooking.booking,
+        formProgress: calculateProgress(newBooking.booking),
+      }
+    };
   }),
   
   removeGuest: (id) => set((state) => {
     if (!state.booking.roomBooking) return state;
-    return {
+    
+    const newBooking = {
       booking: {
         ...state.booking,
         roomBooking: {
@@ -207,11 +282,19 @@ export const useStore = create<StoreState>((set) => ({
         },
       },
     };
+    
+    return {
+      booking: {
+        ...newBooking.booking,
+        formProgress: calculateProgress(newBooking.booking),
+      }
+    };
   }),
   
   updateGuest: (id, data) => set((state) => {
     if (!state.booking.roomBooking) return state;
-    return {
+    
+    const newBooking = {
       booking: {
         ...state.booking,
         roomBooking: {
@@ -222,11 +305,77 @@ export const useStore = create<StoreState>((set) => ({
         },
       },
     };
+    
+    return {
+      booking: {
+        ...newBooking.booking,
+        formProgress: calculateProgress(newBooking.booking),
+      }
+    };
   }),
   
-  toggleSharer: (guestId) => set((state) => {
+  // V2.0.40: 多Sharer支持
+  addSharer: (guestId) => set((state) => {
     if (!state.booking.roomBooking) return state;
+    
+    const newSharer: Sharer = {
+      id: sharerIdCounter++,
+      oldPID: '',
+      newPID: '',
+      name: '',
+    };
+    
+    const newBooking = {
+      booking: {
+        ...state.booking,
+        roomBooking: {
+          ...state.booking.roomBooking,
+          guests: state.booking.roomBooking.guests.map((g) =>
+            g.id === guestId
+              ? { ...g, sharers: [...g.sharers, newSharer] }
+              : g
+          ),
+        },
+      },
+    };
+    
     return {
+      booking: {
+        ...newBooking.booking,
+        formProgress: calculateProgress(newBooking.booking),
+      }
+    };
+  }),
+  
+  removeSharer: (guestId, sharerId) => set((state) => {
+    if (!state.booking.roomBooking) return state;
+    
+    const newBooking = {
+      booking: {
+        ...state.booking,
+        roomBooking: {
+          ...state.booking.roomBooking,
+          guests: state.booking.roomBooking.guests.map((g) =>
+            g.id === guestId
+              ? { ...g, sharers: g.sharers.filter((s) => s.id !== sharerId) }
+              : g
+          ),
+        },
+      },
+    };
+    
+    return {
+      booking: {
+        ...newBooking.booking,
+        formProgress: calculateProgress(newBooking.booking),
+      }
+    };
+  }),
+  
+  updateSharer: (guestId, sharerId, data) => set((state) => {
+    if (!state.booking.roomBooking) return state;
+    
+    const newBooking = {
       booking: {
         ...state.booking,
         roomBooking: {
@@ -235,45 +384,39 @@ export const useStore = create<StoreState>((set) => ({
             g.id === guestId
               ? {
                   ...g,
-                  sharer: g.sharer
-                    ? undefined
-                    : { oldPID: '', newPID: '', name: '' },
+                  sharers: g.sharers.map((s) =>
+                    s.id === sharerId ? { ...s, ...data } : s
+                  ),
                 }
               : g
           ),
         },
       },
     };
-  }),
-  
-  updateSharer: (guestId, data) => set((state) => {
-    if (!state.booking.roomBooking) return state;
+    
     return {
       booking: {
-        ...state.booking,
-        roomBooking: {
-          ...state.booking.roomBooking,
-          guests: state.booking.roomBooking.guests.map((g) =>
-            g.id === guestId && g.sharer
-              ? { ...g, sharer: { ...g.sharer, ...data } }
-              : g
-          ),
-        },
-      },
+        ...newBooking.booking,
+        formProgress: calculateProgress(newBooking.booking),
+      }
     };
   }),
   
-  removeSharer: (guestId) => set((state) => {
-    if (!state.booking.roomBooking) return state;
+  // V2.0.24: 验证
+  setValidationError: (field, error) => set((state) => ({
+    booking: {
+      ...state.booking,
+      validationErrors: { ...state.booking.validationErrors, [field]: error },
+    },
+  })),
+  
+  clearValidationError: (field) => set((state) => {
+    const newErrors = { ...state.booking.validationErrors };
+    delete newErrors[field];
     return {
       booking: {
         ...state.booking,
-        roomBooking: {
-          ...state.booking.roomBooking,
-          guests: state.booking.roomBooking.guests.map((g) =>
-            g.id === guestId ? { ...g, sharer: undefined } : g
-          ),
-        },
+        validationErrors: newErrors,
       },
     };
   }),
@@ -409,12 +552,15 @@ export const useStore = create<StoreState>((set) => ({
         name: rg.name,
       });
       
-      if (rg.sharer) {
-        newGolfGuests.push({
-          id: golfGuestIdCounter++,
-          oldPID: rg.sharer.oldPID,
-          newPID: rg.sharer.newPID,
-          name: rg.sharer.name,
+      // V2.0.40: 包含所有sharers
+      if (rg.sharers && rg.sharers.length > 0) {
+        rg.sharers.forEach((sharer) => {
+          newGolfGuests.push({
+            id: golfGuestIdCounter++,
+            oldPID: sharer.oldPID,
+            newPID: sharer.newPID,
+            name: sharer.name,
+          });
         });
       }
     });
@@ -566,6 +712,7 @@ export const useStore = create<StoreState>((set) => ({
   // 重置
   resetAll: () => {
     guestIdCounter = 1;
+    sharerIdCounter = 1;
     carIdCounter = 1;
     golfGuestIdCounter = 1;
     oneDayTripGuestIdCounter = 1;

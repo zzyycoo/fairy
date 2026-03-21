@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect } from 'react';
 import { useStore } from './store';
+import { ErrorBoundary } from './ErrorBoundary';
 import Home from './pages/Home';
 import Booking from './pages/Booking';
 import './index.css';
@@ -18,13 +19,15 @@ function App() {
   }, [darkMode]);
   
   return (
-    <BrowserRouter basename="/fairy">
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/booking" element={<Booking />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter basename="/fairy">
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/booking" element={<Booking />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

@@ -36,43 +36,67 @@ export function useEmailGenerator() {
     const rateCode = rb.rateCode;
     const deposit = rb.deposit;
     
+    // V2.0.41: 找到第一个有效的客人（不一定是index 0）
+    let firstValidGuest = null;
+    for (const guest of rb.guests) {
+      if (guest.name) {
+        firstValidGuest = guest;
+        break;
+      }
+    }
+    
+    // V2.0.41: 如果没有有效客人，返回空
+    if (!firstValidGuest) {
+      return { subject: '', body: '' };
+    }
+    
+    const firstGuestPID = resolvePID(firstValidGuest.oldPID, firstValidGuest.newPID);
+    const firstGuestName = firstValidGuest.name;
+    
     // 收集客人信息
     const guestLines: string[] = [];
     const roomLines: string[] = [];
     const promotions: number[] = [];
     
-    let firstGuestPID = 'New';
-    let firstGuestName = '';
-    
-    rb.guests.forEach((guest, idx) => {
-      if (idx === 0) {
-        firstGuestPID = resolvePID(guest.oldPID, guest.newPID);
-        firstGuestName = guest.name;
+    rb.guests.forEach((guest) => {
+      // V2.0.41: 跳过没有姓名的客人
+      if (!guest.name || !guest.roomType) return;
+      
+      const pid = resolvePID(guest.oldPID, guest.newPID);
+      let line = `${guest.name} - ${pid}`;
+      
+      // V2.0.40: 支持多sharers
+      if (guest.sharers && guest.sharers.length > 0) {
+        const sharerLines = guest.sharers
+          .filter(s => s.name) // 只显示有名字的sharer
+          .map(s => {
+            const sharerPID = resolvePID(s.oldPID, s.newPID);
+            return `(Sharer: ${s.name} - ${sharerPID})`;
+          });
+        
+        if (sharerLines.length > 0) {
+          line += '\n' + sharerLines.join('\n');
+        }
       }
       
-      if (guest.name && guest.roomType) {
-        const pid = resolvePID(guest.oldPID, guest.newPID);
-        let line = `${guest.name} - ${pid}`;
-        
-        if (guest.sharer?.name) {
-          const sharerPID = resolvePID(guest.sharer.oldPID, guest.sharer.newPID);
-          line += `\n(Sharer: ${guest.sharer.name} - ${sharerPID})`;
-        }
-        
-        guestLines.push(line);
-        roomLines.push(`${guest.name} - ${guest.roomType}`);
-        
-        // 查找积分
-        const hotelTypes = roomTypes[hotel as keyof typeof roomTypes];
-        if (hotelTypes) {
-          hotelTypes.forEach(group => {
-            if (group.types.includes(guest.roomType!) && !promotions.includes(group.promotion)) {
-              promotions.push(group.promotion);
-            }
-          });
-        }
+      guestLines.push(line);
+      roomLines.push(`${guest.name} - ${guest.roomType}`);
+      
+      // 查找积分
+      const hotelTypes = roomTypes[hotel as keyof typeof roomTypes];
+      if (hotelTypes) {
+        hotelTypes.forEach(group => {
+          if (group.types.includes(guest.roomType!) && !promotions.includes(group.promotion)) {
+            promotions.push(group.promotion);
+          }
+        });
       }
     });
+    
+    // V2.0.41: 如果没有有效的客人行，返回空
+    if (guestLines.length === 0) {
+      return { subject: '', body: '' };
+    }
     
     const subject = `[${agent}] ${firstGuestPID} ${firstGuestName} ${hotel} Hotel Room Booking on ${checkIn}`;
     
@@ -297,12 +321,35 @@ ${names.join('\n')}`;
         return null;
       }
       
-      // 验证房型
+      // V2.0.37: 验证日期 - 入住日期最早为明天
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const checkIn = new Date(booking.roomBooking.checkIn);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      // V2.0.38: 允许过去日期（补录模式），只给出警告
+      if (checkIn < tomorrow) {
+        const isBackdated = confirm('⚠️ Check-in date is earlier than tomorrow. This appears to be a backdated booking. Continue?');
+        if (!isBackdated) return null;
+      }
+      
+      // V2.0.22: 验证房型 - 只验证有姓名的客人
       for (const guest of booking.roomBooking.guests) {
+        // V2.0.41: 跳过没有姓名的客人
+        if (!guest.name) continue;
+        
         if (!guest.roomType) {
           alert(`⚠️ Please select a Room Type for all guests before generating the email.`);
           return null;
         }
+      }
+      
+      // V2.0.41: 验证至少有一个有效客人
+      const hasValidGuest = booking.roomBooking.guests.some(g => g.name && g.roomType);
+      if (!hasValidGuest) {
+        alert('⚠️ Please fill in at least one guest with name and room type.');
+        return null;
       }
     }
     
@@ -313,6 +360,10 @@ ${names.join('\n')}`;
     if (booking.selectedServices.has('room')) {
       services.push('Room');
       const room = generateRoomEmail();
+      if (!room.subject) {
+        alert('⚠️ Failed to generate room booking email. Please check guest information.');
+        return null;
+      }
       subject = room.subject;
       combinedBody = room.body;
     }
@@ -357,15 +408,20 @@ ${names.join('\n')}`;
       let checkInDate = '';
       
       if (booking.selectedServices.has('room') && booking.roomBooking) {
-        const g = booking.roomBooking.guests[0];
-        firstGuestPID = resolvePID(g?.oldPID || '', g?.newPID || '');
-        firstGuestName = g?.name || '';
-        checkInDate = formatDate(booking.roomBooking.checkIn);
+        // V2.0.41: 找到第一个有效客人
+        const validGuest = booking.roomBooking.guests.find(g => g.name);
+        if (validGuest) {
+          firstGuestPID = resolvePID(validGuest.oldPID || '', validGuest.newPID || '');
+          firstGuestName = validGuest.name;
+          checkInDate = formatDate(booking.roomBooking.checkIn);
+        }
       } else if (booking.selectedServices.has('golf') && booking.golfBooking) {
         const g = booking.golfBooking.guests[0];
-        firstGuestPID = resolvePID(g?.oldPID || '', g?.newPID || '');
-        firstGuestName = g?.name || '';
-        checkInDate = formatDateShort(booking.golfBooking.dateTime?.split('T')[0] || '');
+        if (g) {
+          firstGuestPID = resolvePID(g?.oldPID || '', g?.newPID || '');
+          firstGuestName = g?.name || '';
+          checkInDate = formatDateShort(booking.golfBooking.dateTime?.split('T')[0] || '');
+        }
       }
       
       const agent = booking.roomBooking?.agent || booking.golfBooking?.authorizer || '';

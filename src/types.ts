@@ -1,4 +1,4 @@
-// 类型定义 - 严格遵循 Booking 仓库
+// 类型定义 - 严格遵循 Booking V2.0.42
 
 export interface Guest {
   id: number;
@@ -6,11 +6,15 @@ export interface Guest {
   newPID: string;
   name: string;
   roomType?: string;
-  sharer?: {
-    oldPID: string;
-    newPID: string;
-    name: string;
-  };
+  // V2.0.40: 多Sharer支持
+  sharers: Sharer[];
+}
+
+export interface Sharer {
+  id: number;
+  oldPID: string;
+  newPID: string;
+  name: string;
 }
 
 export interface CarService {
@@ -116,6 +120,12 @@ export interface BookingState {
   // 生成的邮件
   generatedEmail: string | null;
   emailSubject: string | null;
+  
+  // V2.0.24: 表单验证状态
+  validationErrors: Record<string, string>;
+  
+  // V2.0.24: 进度
+  formProgress: number;
 }
 
 // PID 数据库类型

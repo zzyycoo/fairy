@@ -200,7 +200,7 @@ export default function Home() {
               ? 'bg-slate-800/80 text-slate-300 border-slate-700' 
               : 'bg-white/80 text-slate-500 border-slate-200/60'
           }`}>
-            2.2.00
+            2.2.01
           </span>
         </div>
       </nav>
