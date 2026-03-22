@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { 
   ArrowLeft, Plus, Trash2, CheckCircle2, Copy, Send, 
   User, Bed, Home, FileText
@@ -38,12 +38,7 @@ function LivePreviewPanel({ email, isVisible, onClose }: { email: string | null;
   if (!isVisible || !email) return null;
   
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 300 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 300 }}
-      className="fixed right-0 top-1/2 -translate-y-1/2 w-80 max-h-[70vh] bg-white dark:bg-slate-800 rounded-l-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 hidden lg:flex flex-col"
-    >
+    <div className="fixed right-0 top-1/2 -translate-y-1/2 w-80 max-h-[70vh] bg-white dark:bg-slate-800 rounded-l-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-50 hidden lg:flex flex-col">
       <div className="flex items-center justify-between p-3 border-b border-slate-200 dark:border-slate-700">
         <span className="font-semibold text-sm text-slate-700 dark:text-slate-300 flex items-center gap-2">
           <FileText size={16} />
@@ -54,7 +49,7 @@ function LivePreviewPanel({ email, isVisible, onClose }: { email: string | null;
       <div className="flex-1 overflow-y-auto p-4 font-mono text-xs text-slate-600 dark:text-slate-400 whitespace-pre-wrap">
         {email}
       </div>
-    </motion.div>
+    </div>
   );
 }
 
@@ -237,9 +232,8 @@ function RoomBookingForm() {
       
       <h3 className="text-md font-semibold mb-3 text-slate-700 dark:text-slate-300">Guest Information</h3>
       <div className="space-y-4">
-        <AnimatePresence>
           {rb.guests.map((guest, idx) => (
-            <motion.div key={guest.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} className="p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+            <div key={guest.id} className="p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
               <div className="flex items-center justify-between mb-3">
                 <span className="font-medium text-slate-700 dark:text-slate-300 flex items-center gap-2"><User size={16} /> Guest #{idx + 1}</span>
                 <button onClick={() => removeGuest(guest.id)} className="text-red-500 hover:text-red-600 p-1 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"><Trash2 size={16} /></button>
@@ -273,9 +267,8 @@ function RoomBookingForm() {
                   {guest.sharers.length === 0 && <div className="text-xs text-slate-400 dark:text-slate-500 italic py-2">No sharers added. Click "Add Sharer" to add room sharers.</div>}
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
-        </AnimatePresence>
       </div>
       <button onClick={addGuest} className="mt-4 w-full py-2.5 border-2 border-dashed border-slate-300 dark:border-slate-600 rounded-lg text-slate-600 dark:text-slate-400 hover:border-violet-400 hover:text-violet-600 dark:hover:text-violet-400 transition-colors flex items-center justify-center gap-2 font-medium"><Plus size={18} /> Add Guest</button>
     </div>
@@ -362,13 +355,13 @@ export default function Booking() {
           )}
         </div>
         
-        {successMessage && <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="p-4 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700 rounded-lg text-emerald-800 dark:text-emerald-300">{successMessage}</motion.div>}
+        {successMessage && <div className="p-4 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700 rounded-lg text-emerald-800 dark:text-emerald-300">{successMessage}</div>}
         
         {showPreview && generatedEmail && (
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-slate-100 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
+          <div className="bg-slate-100 dark:bg-slate-900 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
             <h3 className="text-lg font-bold mb-4 text-slate-800 dark:text-white">Email Preview</h3>
             <pre className="whitespace-pre-wrap font-mono text-sm text-slate-700 dark:text-slate-300 overflow-x-auto">{generatedEmail}</pre>
-          </motion.div>
+          </div>
         )}
       </main>
       
