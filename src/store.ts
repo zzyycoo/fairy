@@ -82,6 +82,9 @@ interface StoreState {
   removeSharer: (guestId: number, sharerId: number) => void;
   updateSharer: (guestId: number, sharerId: number, data: Partial<Sharer>) => void;
   
+  // V2.0.24: 手动计算表单进度（避免自动计算导致的循环）
+  calculateFormProgress: () => void;
+
   // V2.0.24: 验证
   setValidationError: (field: string, error: string) => void;
   clearValidationError: (field: string) => void;
@@ -226,20 +229,14 @@ export const useStore = create<StoreState>((set) => ({
     };
   }),
   
-  updateRoomBooking: (data) => set((state) => {
-    const newBooking = {
+  updateRoomBooking: (data) => set((state) => ({
+    booking: {
       ...state.booking,
       roomBooking: state.booking.roomBooking 
         ? { ...state.booking.roomBooking, ...data }
         : null,
-    };
-    return {
-      booking: {
-        ...newBooking,
-        formProgress: calculateProgress(newBooking),
-      }
-    };
-  }),
+    }
+  })),
   
   addGuest: () => set((state) => {
     if (!state.booking.roomBooking) return state;
@@ -273,7 +270,7 @@ export const useStore = create<StoreState>((set) => ({
   removeGuest: (id) => set((state) => {
     if (!state.booking.roomBooking) return state;
     
-    const newBooking = {
+    return {
       booking: {
         ...state.booking,
         roomBooking: {
@@ -281,13 +278,6 @@ export const useStore = create<StoreState>((set) => ({
           guests: state.booking.roomBooking.guests.filter((g) => g.id !== id),
         },
       },
-    };
-    
-    return {
-      booking: {
-        ...newBooking.booking,
-        formProgress: calculateProgress(newBooking.booking),
-      }
     };
   }),
   
@@ -303,14 +293,13 @@ export const useStore = create<StoreState>((set) => ({
             g.id === id ? { ...g, ...data } : g
           ),
         },
+        // 移除 formProgress 自动更新，避免循环
+        // formProgress: calculateProgress({ ...state.booking, roomBooking: { ...state.booking.roomBooking, guests: state.booking.roomBooking.guests.map((g) => g.id === id ? { ...g, ...data } : g) } }),
       },
     };
     
     return {
-      booking: {
-        ...newBooking.booking,
-        formProgress: calculateProgress(newBooking.booking),
-      }
+      booking: newBooking.booking
     };
   }),
   
@@ -402,6 +391,14 @@ export const useStore = create<StoreState>((set) => ({
     };
   }),
   
+  // V2.0.24: 手动计算表单进度（避免自动计算导致的循环）
+  calculateFormProgress: () => set((state) => ({
+    booking: {
+      ...state.booking,
+      formProgress: calculateProgress(state.booking),
+    },
+  })),
+
   // V2.0.24: 验证
   setValidationError: (field, error) => set((state) => ({
     booking: {
