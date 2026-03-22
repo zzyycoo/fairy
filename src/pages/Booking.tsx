@@ -277,7 +277,7 @@ function RoomBookingForm() {
 
 export default function Booking() {
   const navigate = useNavigate();
-  const { booking, resetAll, darkMode, setGeneratedEmail } = useStore();
+  const { booking, resetAll, darkMode } = useStore();
   const { generateAllEmails } = useEmailGenerator();
   const [generatedEmail, setLocalGeneratedEmail] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
@@ -308,7 +308,7 @@ export default function Booking() {
     const result = generateAllEmails();
     if (result) {
       setLocalGeneratedEmail(result.email);
-      setGeneratedEmail(result.email, result.subject);
+      // 移除 store 更新，避免循环: setGeneratedEmail(result.email, result.subject);
       setShowPreview(true);
     }
   };
