@@ -221,14 +221,11 @@ export const useStore = create<StoreState>((set) => ({
       },
     };
     
-    return { 
-      booking: {
-        ...newBooking,
-        formProgress: calculateProgress(newBooking),
-      }
+    return {
+      booking: newBooking
     };
   }),
-  
+
   updateRoomBooking: (data) => set((state) => ({
     booking: {
       ...state.booking,
@@ -249,7 +246,7 @@ export const useStore = create<StoreState>((set) => ({
       sharers: [], // V2.0.39: 默认空sharers数组
     };
     
-    const newBooking = {
+    return {
       booking: {
         ...state.booking,
         roomBooking: {
@@ -258,15 +255,8 @@ export const useStore = create<StoreState>((set) => ({
         },
       },
     };
-    
-    return {
-      booking: {
-        ...newBooking.booking,
-        formProgress: calculateProgress(newBooking.booking),
-      }
-    };
   }),
-  
+
   removeGuest: (id) => set((state) => {
     if (!state.booking.roomBooking) return state;
     
@@ -329,17 +319,14 @@ export const useStore = create<StoreState>((set) => ({
     };
     
     return {
-      booking: {
-        ...newBooking.booking,
-        formProgress: calculateProgress(newBooking.booking),
-      }
+      booking: newBooking.booking
     };
   }),
-  
+
   removeSharer: (guestId, sharerId) => set((state) => {
     if (!state.booking.roomBooking) return state;
-    
-    const newBooking = {
+
+    return {
       booking: {
         ...state.booking,
         roomBooking: {
@@ -352,19 +339,12 @@ export const useStore = create<StoreState>((set) => ({
         },
       },
     };
-    
-    return {
-      booking: {
-        ...newBooking.booking,
-        formProgress: calculateProgress(newBooking.booking),
-      }
-    };
   }),
-  
+
   updateSharer: (guestId, sharerId, data) => set((state) => {
     if (!state.booking.roomBooking) return state;
-    
-    const newBooking = {
+
+    return {
       booking: {
         ...state.booking,
         roomBooking: {
@@ -381,13 +361,6 @@ export const useStore = create<StoreState>((set) => ({
           ),
         },
       },
-    };
-    
-    return {
-      booking: {
-        ...newBooking.booking,
-        formProgress: calculateProgress(newBooking.booking),
-      }
     };
   }),
   
