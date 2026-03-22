@@ -129,10 +129,29 @@ let carIdCounter = 1;
 let golfGuestIdCounter = 1;
 let oneDayTripGuestIdCounter = 1;
 
+// 预设 Room Booking 初始数据
+const getInitialRoomBooking = () => ({
+  agent: '',
+  hotel: '' as '',
+  checkIn: getTodayStr(),
+  checkOut: getTomorrowStr(),
+  authorizer: 'Jian.Xu',
+  rateCode: 'CASBAR',
+  deposit: 'No',
+  guests: [{
+    id: 1,
+    oldPID: '',
+    newPID: '',
+    name: '',
+    roomType: '',
+    sharers: [] as any,
+  }],
+});
+
 const initialState: BookingState = {
   selectedServices: new Set(),
   isOneDayTripMode: false,
-  roomBooking: null,
+  roomBooking: getInitialRoomBooking(), // 预设数据，不需要初始化
   carServices: [],
   golfBooking: null,
   busService: null,
