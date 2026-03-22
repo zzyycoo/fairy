@@ -63,11 +63,7 @@ export default function Home() {
     booking, 
     toggleService, 
     setOneDayTripMode,
-    initRoomBooking,
-    initGolfBooking,
-    initBusService,
     initOneDayTrip,
-    addCarService,
   } = useStore();
   
   const { pidDatabase, handleFileUpload } = usePIDSearch();
@@ -88,12 +84,6 @@ export default function Home() {
     }
     
     setOneDayTripMode(false);
-    
-    // 初始化选中的服务
-    if (booking.selectedServices.has('room')) initRoomBooking();
-    if (booking.selectedServices.has('car')) addCarService();
-    if (booking.selectedServices.has('golf')) initGolfBooking();
-    if (booking.selectedServices.has('bus')) initBusService();
     
     navigate('/booking');
   };

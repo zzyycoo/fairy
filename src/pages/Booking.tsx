@@ -7,7 +7,7 @@ import {
 import { useStore } from '../store';
 import { usePIDSearch } from '../utils';
 import { useEmailGenerator } from '../emailGenerator';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 // 房间类型配置
 const roomTypesConfig = {
@@ -277,12 +277,21 @@ function RoomBookingForm() {
 
 export default function Booking() {
   const navigate = useNavigate();
-  const { booking, resetAll, darkMode } = useStore();
+  const { booking, resetAll, darkMode, initRoomBooking } = useStore();
   const { generateAllEmails } = useEmailGenerator();
   const [generatedEmail, setLocalGeneratedEmail] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
+  const initializedRef = useRef(false);
+  
+  // 只在首次进入时初始化
+  useEffect(() => {
+    if (!initializedRef.current && booking.selectedServices.has('room') && !booking.roomBooking) {
+      initializedRef.current = true;
+      initRoomBooking();
+    }
+  }, []);
   
   // 只在showPreview变化时生成邮件，避免无限循环
   useEffect(() => {
