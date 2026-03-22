@@ -118,11 +118,18 @@ function PIDInput({ oldPID, newPID, name, onOldPIDChange, onNewPIDChange, onName
   const [foundName, setFoundName] = useState('');
   const timeoutRef = useRef<ReturnType<typeof setTimeout>>();
   
-  // 使用 ref 存储回调函数，避免依赖变化导致的循环
+  // 使用 ref 存储回调函数和搜索状态，避免依赖变化导致的循环
   const callbacksRef = useRef({ onNameChange, onOldPIDChange, onNewPIDChange });
   callbacksRef.current = { onNameChange, onOldPIDChange, onNewPIDChange };
   
+  // 使用 ref 存储之前的 PID 值，避免重复搜索
+  const prevPIDRef = useRef({ oldPID: '', newPID: '' });
+  
   const handleSearch = useCallback(() => {
+    // 如果 PID 没有变化，不执行搜索
+    if (prevPIDRef.current.oldPID === oldPID && prevPIDRef.current.newPID === newPID) return;
+    prevPIDRef.current = { oldPID, newPID };
+    
     if (!oldPID && !newPID) { setSearchStatus('idle'); return; }
     setSearchStatus('searching');
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -138,7 +145,12 @@ function PIDInput({ oldPID, newPID, name, onOldPIDChange, onNewPIDChange, onName
     }, 300);
   }, [oldPID, newPID, searchPID]);
   
-  useEffect(() => { handleSearch(); return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }; }, [handleSearch]);
+  // 只在 oldPID/newPID 实际变化时执行搜索
+  useEffect(() => { 
+    handleSearch(); 
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current); }; 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [oldPID, newPID]);
   
   const getInputClass = (isNew: boolean, isRequired = false) => {
     const base = "w-full px-3 py-2 rounded-lg border text-sm transition-colors";
