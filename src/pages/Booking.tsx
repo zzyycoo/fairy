@@ -33,26 +33,6 @@ const roomTypesConfig = {
 const agents = ['IM', 'A03 Tun Naing', 'A171 Pham Duc Huy', 'Le Cong Ly Thanh', 'Wang Kan', 'Chen Cheng Chia'];
 const authorizers = ['Kevin Loh', 'IMHUYT', 'Nan.Hao', 'Kingz Chock', 'Jian.Xu'];
 
-// V2.0.24: 进度条组件
-function ProgressBar({ progress }: { progress: number }) {
-  return (
-    <div className="bg-white dark:bg-slate-800 rounded-lg p-3 mb-4 border border-slate-200 dark:border-slate-700 shadow-sm">
-      <div className="flex justify-between items-center mb-2">
-        <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Form Completion</span>
-        <span className="text-sm font-bold text-violet-600 dark:text-violet-400">{progress}%</span>
-      </div>
-      <div className="h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
-        <motion.div
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.5 }}
-          className="h-full bg-gradient-to-r from-violet-500 to-indigo-600 rounded-full"
-        />
-      </div>
-    </div>
-  );
-}
-
 // V2.0.24: 实时预览面板
 function LivePreviewPanel({ email, isVisible, onClose }: { email: string | null; isVisible: boolean; onClose: () => void }) {
   if (!isVisible || !email) return null;
@@ -222,8 +202,6 @@ function RoomBookingForm() {
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-sm border border-slate-200 dark:border-slate-700">
       <h2 className="text-lg font-bold mb-4 flex items-center gap-2 text-slate-800 dark:text-white"><Bed size={20} className="text-violet-500" /> Room Booking Information</h2>
-      <ProgressBar progress={booking.formProgress} />
-      
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div>
           <label className="block text-sm font-medium mb-1 text-slate-700 dark:text-slate-300">Agent <span className="text-red-500">*</span></label>
